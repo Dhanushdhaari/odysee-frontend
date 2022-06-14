@@ -138,15 +138,20 @@ export default function ShowPage(props: Props) {
   useEffect(() => {
     if (canonicalUrl) {
       const urlPath = pathname + hash;
-      const fullParams =
-        urlPath.indexOf('?') > 0 ? urlPath.substring(urlPath.indexOf('?')) : search.length > 0 ? search : '';
-      const canonicalUrlPath = '/' + canonicalUrl.replace(/^lbry:\/\//, '').replace(/#/g, ':') + fullParams;
+      const path = urlPath.slice(1).replace(/:/g, '#');
+      // in case query is not part of search, it will be identified as queryString and
+      // passed along on replaceState
+      let queryString;
+      try {
+        ({ queryString } = parseURI(path));
+      } catch (e) {}
+      const canonicalUrlPath = '/' + canonicalUrl.replace(/^lbry:\/\//, '').replace(/#/g, ':');
 
       // replaceState will fail if on a different domain (like webcache.googleusercontent.com)
       const hostname = isDev ? 'localhost' : DOMAIN;
 
-      if (canonicalUrlPath !== pathname && hostname === window.location.hostname && fullParams !== search) {
-        const urlParams = new URLSearchParams(search);
+      if (canonicalUrlPath !== urlPath && hostname === window.location.hostname) {
+        const urlParams = new URLSearchParams(search || queryString);
         let replaceUrl = canonicalUrlPath;
         if (urlParams.get(COLLECTIONS_CONSTS.COLLECTION_ID)) {
           const listId = urlParams.get(COLLECTIONS_CONSTS.COLLECTION_ID) || '';
@@ -154,12 +159,6 @@ export default function ShowPage(props: Props) {
           replaceUrl += `?${urlParams.toString()}`;
         }
         history.replaceState(history.state, '', replaceUrl);
-      }
-
-      const windowHref = window.location.href;
-      const noUrlParams = search.length === 0;
-      if (windowHref.includes('?') && noUrlParams) {
-        history.replaceState(history.state, '', windowHref.substring(0, windowHref.length - 1));
       }
     }
   }, [canonicalUrl, pathname, hash, search]);
