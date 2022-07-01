@@ -11,6 +11,7 @@ import ClaimList from 'component/claimList';
 import Card from 'component/common/card';
 import LbcSymbol from 'component/common/lbc-symbol';
 import SelectThumbnail from 'component/selectThumbnail';
+import Spinner from 'component/spinner';
 import { useHistory } from 'react-router-dom';
 import { isNameValid, regexInvalidURI } from 'util/lbryURI';
 import * as THUMBNAIL_STATUSES from 'constants/thumbnail_upload_statuses';
@@ -22,6 +23,14 @@ import { INVALID_NAME_ERROR } from 'constants/claim';
 import SUPPORTED_LANGUAGES from 'constants/supported_languages';
 import * as PAGES from 'constants/pages';
 import analytics from 'analytics';
+
+const TAB = {
+  GENERAL: 0,
+  ITEMS: 1,
+  CREDITS: 2,
+  TAGS: 3,
+  OTHER: 4,
+};
 
 // prettier-ignore
 const Lazy = {
@@ -108,6 +117,8 @@ function CollectionForm(props: Props) {
   const [bidError, setBidError] = React.useState('');
   const [thumbStatus, setThumbStatus] = React.useState('');
   const [thumbError, setThumbError] = React.useState('');
+  const [tabIndex, setTabIndex] = React.useState(0);
+  const [showItemsSpinner, setShowItemsSpinner] = React.useState(false);
   const [params, setParams]: [any, (any) => void] = React.useState({});
   const name = params.name;
   const isNewCollection = !uri;
@@ -255,6 +266,24 @@ function CollectionForm(props: Props) {
     }
   }
 
+  function onTabChange(newTabIndex) {
+    if (tabIndex !== newTabIndex) {
+      if (newTabIndex === TAB.ITEMS) {
+        setShowItemsSpinner(true);
+        setTimeout(() => {
+          // Wait enough time for the spinner to appear, then switch tabs.
+          setTabIndex(newTabIndex);
+          // We can stop the spinner immediately. If the list takes a long time
+          // to render, the spinner would continue to spin until the
+          // state-change is flushed.
+          setShowItemsSpinner(false);
+        }, 250);
+      } else {
+        setTabIndex(newTabIndex);
+      }
+    }
+  }
+
   React.useEffect(() => {
     const collectionClaimIds = JSON.parse(collectionClaimIdsString);
     setParams({ ...params, claims: collectionClaimIds });
@@ -294,13 +323,16 @@ function CollectionForm(props: Props) {
   return (
     <>
       <div className={classnames('main--contained publishList-wrapper', { 'card--disabled': disabled })}>
-        <Tabs>
+        <Tabs onChange={onTabChange} index={tabIndex}>
           <TabList className="tabs__list--collection-edit-page">
             <Tab>{__('General')}</Tab>
             <Tab>{__('Items')}</Tab>
             <Tab>{__('Credits')}</Tab>
             <Tab>{__('Tags')}</Tab>
-            <Tab>{__('Other')}</Tab>
+            <Tab>
+              {__('Other')}
+              {showItemsSpinner && <Spinner type="small" />}
+            </Tab>
           </TabList>
           <TabPanels>
             <TabPanel>
@@ -361,21 +393,23 @@ function CollectionForm(props: Props) {
               </div>
             </TabPanel>
             <TabPanel>
-              <React.Suspense fallback={null}>
-                <Lazy.DragDropContext onDragEnd={handleOnDragEnd}>
-                  <Lazy.Droppable droppableId="list__ordering">
-                    {(DroppableProvided) => (
-                      <ClaimList
-                        uris={collectionUrls}
-                        collectionId={collectionId}
-                        empty={__('This list has no items.')}
-                        showEdit
-                        droppableProvided={DroppableProvided}
-                      />
-                    )}
-                  </Lazy.Droppable>
-                </Lazy.DragDropContext>
-              </React.Suspense>
+              {tabIndex === TAB.ITEMS && (
+                <React.Suspense fallback={null}>
+                  <Lazy.DragDropContext onDragEnd={handleOnDragEnd}>
+                    <Lazy.Droppable droppableId="list__ordering">
+                      {(DroppableProvided) => (
+                        <ClaimList
+                          uris={collectionUrls}
+                          collectionId={collectionId}
+                          empty={__('This list has no items.')}
+                          showEdit
+                          droppableProvided={DroppableProvided}
+                        />
+                      )}
+                    </Lazy.Droppable>
+                  </Lazy.DragDropContext>
+                </React.Suspense>
+              )}
             </TabPanel>
             <TabPanel>
               <Card
