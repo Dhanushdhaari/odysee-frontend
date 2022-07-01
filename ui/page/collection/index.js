@@ -18,6 +18,7 @@ import {
   selectCountForCollectionId,
   selectEditedCollectionForId,
   selectBrokenUrlsForCollectionId,
+  selectIsCollectionPrivateForId,
 } from 'redux/selectors/collections';
 
 import { getThumbnailFromClaim } from 'util/claim';
@@ -39,6 +40,7 @@ const select = (state, props) => {
     collectionUrls: selectUrlsForCollectionId(state, collectionId),
     brokenUrls: selectBrokenUrlsForCollectionId(state, collectionId),
     collectionCount: selectCountForCollectionId(state, collectionId),
+    isPrivateCollection: selectIsCollectionPrivateForId(state, collectionId),
     isResolvingCollection: selectIsResolvingCollectionForId(state, collectionId),
     title: selectTitleForUri(state, uri),
     thumbnail: getThumbnailFromClaim(claim),

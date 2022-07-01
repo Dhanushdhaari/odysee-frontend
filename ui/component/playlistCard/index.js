@@ -11,9 +11,10 @@ import {
   selectCollectionLengthForId,
   selectCollectionIsEmptyForId,
   selectCollectionForId,
+  selectIsResolvingCollectionForId,
 } from 'redux/selectors/collections';
 import { selectPlayingUri } from 'redux/selectors/content';
-import { doCollectionEdit, doClearQueueList } from 'redux/actions/collections';
+import { doCollectionEdit, doClearQueueList, doFetchItemsInCollection } from 'redux/actions/collections';
 import { doClearPlayingCollection } from 'redux/actions/content';
 import { doOpenModal } from 'redux/actions/app';
 
@@ -36,6 +37,7 @@ const select = (state, props) => {
     collectionName: selectNameForCollectionId(state, collectionId),
     isMyCollection: selectCollectionIsMine(state, collectionId),
     isPrivateCollection: selectIsCollectionPrivateForId(state, collectionId),
+    isResolvingCollection: selectIsResolvingCollectionForId(state, collectionId),
     publishedCollectionName: selectPublishedCollectionChannelNameForId(state, collectionId),
     playingItemIndex: playingItemIndex !== null ? playingItemIndex + 1 : 0,
     collectionLength: selectCollectionLengthForId(state, collectionId),
@@ -47,6 +49,7 @@ const select = (state, props) => {
 
 const perform = {
   doCollectionEdit,
+  doFetchItemsInCollection,
   doClearPlayingCollection,
   doClearQueueList,
   doOpenModal,
